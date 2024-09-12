@@ -210,11 +210,18 @@ FlutterWindowsEngine::FlutterWindowsEngine(
       std::make_unique<FlutterWindowsTextureRegistrar>(this, gl_);
 
   // Check for impeller support.
+  flutter_use_soft_ = project_->GetFlutterUseSoftRender();
+
   auto& switches = project_->GetSwitches();
   enable_impeller_ = std::find(switches.begin(), switches.end(),
                                "--enable-impeller=true") != switches.end();
 
-  surface_manager_ = AngleSurfaceManager::Create(enable_impeller_);
+  if (!flutter_use_soft_) {
+    surface_manager_ = AngleSurfaceManager::Create(enable_impeller_);
+  } else {
+    FML_LOG(ERROR) << "engine renders with soft config";
+  }
+
   window_proc_delegate_manager_ = std::make_unique<WindowProcDelegateManager>();
   window_proc_delegate_manager_->RegisterTopLevelWindowProcDelegate(
       [](HWND hwnd, UINT msg, WPARAM wpar, LPARAM lpar, void* user_data,

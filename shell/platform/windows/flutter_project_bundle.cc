@@ -29,6 +29,8 @@ FlutterProjectBundle::FlutterProjectBundle(
         std::string(properties.dart_entrypoint_argv[i]));
   }
 
+  flutter_use_soft_ = properties.flutter_use_soft;
+
   // Resolve any relative paths.
   if (assets_path_.is_relative() || icu_path_.is_relative() ||
       (!aot_library_path_.empty() && aot_library_path_.is_relative())) {
@@ -99,6 +101,10 @@ const std::vector<std::string> FlutterProjectBundle::GetSwitches() {
   switches.insert(switches.end(), env_switches.begin(), env_switches.end());
 
   return switches;
+}
+
+bool FlutterProjectBundle::GetFlutterUseSoftRender() {
+  return flutter_use_soft_;
 }
 
 }  // namespace flutter

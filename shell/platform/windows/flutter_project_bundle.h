@@ -59,6 +59,8 @@ class FlutterProjectBundle {
     return dart_entrypoint_arguments_;
   }
 
+  bool GetFlutterUseSoftRender();
+
  private:
   std::filesystem::path assets_path_;
   std::filesystem::path icu_path_;
@@ -74,6 +76,9 @@ class FlutterProjectBundle {
 
   // Engine switches.
   std::vector<std::string> engine_switches_;
+
+  // use soft render
+  bool flutter_use_soft_{false};
 };
 
 }  // namespace flutter
