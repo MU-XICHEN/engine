@@ -56,6 +56,7 @@ class DartProject {
     dart_entrypoint_ = entrypoint;
   }
 
+  // [WETYPE]
   void set_flutter_use_soft_render(bool val) { flutter_use_soft_render_ = val; }
 
   // Returns the Dart entrypoint.
@@ -85,6 +86,7 @@ class DartProject {
   const std::wstring& assets_path() const { return assets_path_; }
   const std::wstring& icu_data_path() const { return icu_data_path_; }
   const std::wstring& aot_library_path() const { return aot_library_path_; }
+  // [WETYPE]
   const bool flutter_use_soft_render() const {
     return flutter_use_soft_render_;
   }
@@ -100,7 +102,7 @@ class DartProject {
   std::string dart_entrypoint_;
   // The list of arguments to pass through to the Dart entrypoint.
   std::vector<std::string> dart_entrypoint_arguments_;
-  // Flutter use soft render
+  // [WETYPE] Flutter use soft render
   bool flutter_use_soft_render_;
 };
 

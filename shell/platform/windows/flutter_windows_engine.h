@@ -407,6 +407,7 @@ class FlutterWindowsEngine {
 
   bool enable_impeller_ = false;
 
+  // [WETYPE]
   bool flutter_use_soft_ = false;
 
   // The manager for WindowProc delegate registration and callbacks.

@@ -59,6 +59,7 @@ class FlutterProjectBundle {
     return dart_entrypoint_arguments_;
   }
 
+  // [WETYPE]
   bool GetFlutterUseSoftRender();
 
  private:
@@ -77,7 +78,7 @@ class FlutterProjectBundle {
   // Engine switches.
   std::vector<std::string> engine_switches_;
 
-  // use soft render
+  // [WETYPE] use soft render
   bool flutter_use_soft_{false};
 };
 
