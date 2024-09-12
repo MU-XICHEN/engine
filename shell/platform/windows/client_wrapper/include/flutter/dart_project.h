@@ -103,7 +103,7 @@ class DartProject {
   // The list of arguments to pass through to the Dart entrypoint.
   std::vector<std::string> dart_entrypoint_arguments_;
   // [WETYPE] Flutter use soft render
-  bool flutter_use_soft_render_;
+  bool flutter_use_soft_render_ = false;
 };
 
 }  // namespace flutter

@@ -65,7 +65,8 @@ typedef struct {
   // to FlutterDesktopEngineCreate.
   const char** dart_entrypoint_argv;
 
-  // flutter use soft render
+  // [WETYPE] flutter use soft render, must be set, otherwise the default value
+  // is uncertain
   bool flutter_use_soft;
 
 } FlutterDesktopEngineProperties;
