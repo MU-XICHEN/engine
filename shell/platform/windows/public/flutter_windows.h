@@ -207,6 +207,31 @@ FLUTTER_EXPORT void FlutterDesktopEngineSetNextFrameCallback(
     VoidCallback callback,
     void* user_data);
 
+// Opt in to bounded, best-effort timing of successful implicit-view frame
+// submissions. Defaults to disabled. Call on the platform thread with a valid
+// registrar belonging to a live engine. Enabling starts with an empty history;
+// enabling an already enabled engine is a no-op. Disabling drops the history.
+// Returns false for a wrong thread, an invalid engine, or temporary contention
+// while enabling.
+// Never blocks, requests another frame, or changes rendering behavior.
+FLUTTER_EXPORT bool FlutterDesktopEnableFramePresentationTimingV1(
+    FlutterDesktopPluginRegistrarRef registrar,
+    bool enabled);
+
+// Queries a previously submitted frame using Dart FrameTiming.frameNumber.
+// On success, writes the raw Windows QPC captured synchronously just after
+// successful surface submission, before callback/IPC delivery. The timestamp
+// does not include host-parent HWND operations or display scanout. Only the
+// implicit view and the normal GL/software surface paths are supported.
+// Must be called on the platform thread. Returns false (leaving *qpc untouched)
+// if disabled, not submitted, evicted, dropped due to contention, or invalid.
+// The fixed history has 512 frame-number slots; frame N+512 can replace N.
+// Callers must not substitute the query time for a missing timestamp.
+FLUTTER_EXPORT bool FlutterDesktopGetFramePresentationQpcV1(
+    FlutterDesktopPluginRegistrarRef registrar,
+    uint64_t frame_number,
+    int64_t* qpc);
+
 // ========== View ==========
 
 // Return backing HWND for manipulation in host application.

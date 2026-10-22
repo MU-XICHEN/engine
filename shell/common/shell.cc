@@ -1536,6 +1536,12 @@ size_t Shell::UnreportedFramesCount() const {
   return unreported_timings_.size() / (FrameTiming::kStatisticsCount);
 }
 
+void Shell::OnFrameSubmitted(uint64_t frame_number, int64_t view_id) {
+  if (settings_.frame_submitted_callback) {
+    settings_.frame_submitted_callback(frame_number, view_id);
+  }
+}
+
 void Shell::OnFrameRasterized(const FrameTiming& timing) {
   FML_DCHECK(is_set_up_);
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());

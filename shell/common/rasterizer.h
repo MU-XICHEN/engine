@@ -143,6 +143,10 @@ class Rasterizer final : public SnapshotDelegate,
     ///
     virtual void OnFrameRasterized(const FrameTiming& frame_timing) = 0;
 
+    // Optional observer; excludes failed, retried and externally submitted
+    // frames. This notification does not imply display scanout completion.
+    virtual void OnFrameSubmitted(uint64_t, int64_t) {}
+
     /// Time limit for a smooth frame.
     ///
     /// See: `DisplayManager::GetMainDisplayRefreshRate`.
@@ -701,6 +705,7 @@ class Rasterizer final : public SnapshotDelegate,
   // This method is not affiliated with the frame timing recorder, but must be
   // included between the RasterStart and RasterEnd.
   DrawSurfaceStatus DrawToSurfaceUnsafe(
+      uint64_t frame_number,
       int64_t view_id,
       flutter::LayerTree& layer_tree,
       float device_pixel_ratio,

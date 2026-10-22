@@ -9,6 +9,7 @@
 #include <filesystem>
 #include <sstream>
 
+#include "flutter/common/constants.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/paths.h"
 #include "flutter/fml/platform/win/wstring_conversion.h"
@@ -389,6 +390,11 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
       host->root_isolate_create_callback_();
     }
   };
+  args.frame_submitted_callback =
+      [](uint64_t frame_number, int64_t view_id, void* user_data) {
+        static_cast<FlutterWindowsEngine*>(user_data)->RecordFramePresentation(
+            frame_number, view_id);
+      };
   args.channel_update_callback = [](const FlutterChannelUpdate* update,
                                     void* user_data) {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
@@ -455,6 +461,7 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
 }
 
 bool FlutterWindowsEngine::Stop() {
+  EnableFramePresentationTiming(false);
   if (engine_) {
     for (const auto& [callback, registrar] :
          plugin_registrar_destruction_callbacks_) {
@@ -593,6 +600,82 @@ void FlutterWindowsEngine::ReloadSystemFonts() {
 
 void FlutterWindowsEngine::ScheduleFrame() {
   embedder_api_.ScheduleFrame(engine_);
+}
+
+bool FlutterWindowsEngine::EnableFramePresentationTiming(bool enabled) {
+  // Only the platform thread changes the generation. Raster observers use a
+  // snapshot and never wait on a reader or on this short reset operation.
+  const auto generation =
+      frame_presentation_generation_.load(std::memory_order_acquire);
+  if (!enabled) {
+    if (generation & 1u) {
+      frame_presentation_generation_.store(
+          generation + 1, std::memory_order_release);
+    }
+    return true;
+  }
+  if (generation & 1u) {
+    return true;
+  }
+  std::unique_lock<std::mutex> lock(frame_presentation_mutex_, std::try_to_lock);
+  if (!lock.owns_lock()) {
+    return false;
+  }
+  frame_presentation_timings_.fill(FramePresentationTiming{});
+  frame_presentation_generation_.store(generation + 1, std::memory_order_release);
+  return true;
+}
+
+void FlutterWindowsEngine::RecordFramePresentation(
+    uint64_t frame_number,
+    int64_t view_id) {
+  const auto generation =
+      frame_presentation_generation_.load(std::memory_order_acquire);
+  if (!(generation & 1u) || view_id != kFlutterImplicitViewId) {
+    return;
+  }
+  LARGE_INTEGER completed;
+  if (!::QueryPerformanceCounter(&completed)) {
+    return;
+  }
+  std::unique_lock<std::mutex> lock(frame_presentation_mutex_, std::try_to_lock);
+  if (!lock.owns_lock() ||
+      frame_presentation_generation_.load(std::memory_order_acquire) !=
+          generation) {
+    return;
+  }
+  const auto slot_index = frame_number % frame_presentation_timings_.size();
+  auto& slot = frame_presentation_timings_[slot_index];
+  // Preserve the first successful submission if the same frame is replayed.
+  if (slot.frame_number != frame_number || slot.qpc == 0) {
+    slot = {frame_number, completed.QuadPart};
+  }
+}
+
+bool FlutterWindowsEngine::GetFramePresentationQpc(
+    uint64_t frame_number,
+    int64_t* qpc) {
+  if (qpc == nullptr) {
+    return false;
+  }
+  const auto generation =
+      frame_presentation_generation_.load(std::memory_order_acquire);
+  if (!(generation & 1u)) {
+    return false;
+  }
+  std::unique_lock<std::mutex> lock(frame_presentation_mutex_, std::try_to_lock);
+  if (!lock.owns_lock() ||
+      frame_presentation_generation_.load(std::memory_order_acquire) !=
+          generation) {
+    return false;
+  }
+  const auto slot_index = frame_number % frame_presentation_timings_.size();
+  const auto& slot = frame_presentation_timings_[slot_index];
+  if (slot.frame_number != frame_number || slot.qpc <= 0) {
+    return false;
+  }
+  *qpc = slot.qpc;
+  return true;
 }
 
 void FlutterWindowsEngine::SetNextFrameCallback(fml::closure callback) {

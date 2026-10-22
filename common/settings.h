@@ -87,6 +87,8 @@ using Mappings = std::vector<std::unique_ptr<const fml::Mapping>>;
 using MappingsCallback = std::function<Mappings(void)>;
 
 using FrameRasterizedCallback = std::function<void(const FrameTiming&)>;
+using FrameSubmittedCallback =
+    std::function<void(uint64_t /* frame_number */, int64_t /* view_id */)>;
 
 class DartIsolate;
 
@@ -311,6 +313,10 @@ struct Settings {
   // Callback to handle the timings of a rasterized frame. This is called as
   // soon as a frame is rasterized.
   FrameRasterizedCallback frame_rasterized_callback;
+
+  // Optional synchronous observer of a successful SurfaceFrame::Submit.
+  // Runs on the raster thread and must not block or request another frame.
+  FrameSubmittedCallback frame_submitted_callback;
 
   // This data will be available to the isolate immediately on launch via the
   // PlatformDispatcher.getPersistentIsolateData callback. This is meant for
