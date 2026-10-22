@@ -1754,6 +1754,12 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
     settings.root_isolate_create_callback =
         [callback, user_data](const auto& isolate) { callback(user_data); };
   }
+  if (auto callback = SAFE_ACCESS(args, frame_submitted_callback, nullptr)) {
+    settings.frame_submitted_callback =
+        [callback, user_data](uint64_t frame_number, int64_t view_id) {
+          callback(frame_number, view_id, user_data);
+        };
+  }
   if (SAFE_ACCESS(args, log_message_callback, nullptr) != nullptr) {
     FlutterLogMessageCallback callback =
         SAFE_ACCESS(args, log_message_callback, nullptr);

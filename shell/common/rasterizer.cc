@@ -610,8 +610,9 @@ std::unique_ptr<FrameItem> Rasterizer::DrawToSurfacesUnsafe(
     std::unique_ptr<LayerTree> layer_tree = std::move(task->layer_tree);
     float device_pixel_ratio = task->device_pixel_ratio;
 
-    DrawSurfaceStatus status = DrawToSurfaceUnsafe(
-        view_id, *layer_tree, device_pixel_ratio, presentation_time);
+    DrawSurfaceStatus status =
+        DrawToSurfaceUnsafe(frame_timings_recorder.GetFrameNumber(), view_id,
+                            *layer_tree, device_pixel_ratio, presentation_time);
     FML_DCHECK(status != DrawSurfaceStatus::kDiscarded);
 
     auto& view_record = EnsureViewRecord(task->view_id);
@@ -645,6 +646,7 @@ std::unique_ptr<FrameItem> Rasterizer::DrawToSurfacesUnsafe(
 
 /// \see Rasterizer::DrawToSurfaces
 DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
+    uint64_t frame_number,
     int64_t view_id,
     flutter::LayerTree& layer_tree,
     float device_pixel_ratio,
@@ -744,7 +746,10 @@ DrawSurfaceStatus Rasterizer::DrawToSurfaceUnsafe(
       external_view_embedder_->SubmitFlutterView(
           surface_->GetContext(), surface_->GetAiksContext(), std::move(frame));
     } else {
-      frame->Submit();
+      const bool submitted = frame->Submit();
+      if (submitted && frame_status == RasterStatus::kSuccess) {
+        delegate_.OnFrameSubmitted(frame_number, view_id);
+      }
     }
 
     // Do not update raster cache metrics for kResubmit because that status

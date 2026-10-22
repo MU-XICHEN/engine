@@ -5,9 +5,12 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_FLUTTER_WINDOWS_ENGINE_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_FLUTTER_WINDOWS_ENGINE_H_
 
+#include <array>
+#include <atomic>
 #include <chrono>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -191,6 +194,11 @@ class FlutterWindowsEngine {
 
   // Set the callback that is called when the next frame is drawn.
   void SetNextFrameCallback(fml::closure callback);
+
+  // Platform-thread opt-in and query for successful implicit-view submissions.
+  // Neither method waits for the raster thread or schedules a frame.
+  bool EnableFramePresentationTiming(bool enabled);
+  bool GetFramePresentationQpc(uint64_t frame_number, int64_t* qpc);
 
   // Attempts to register the texture with the given |texture_id|.
   bool RegisterExternalTexture(int64_t texture_id);
@@ -418,6 +426,18 @@ class FlutterWindowsEngine {
 
   // The on frame drawn callback.
   fml::closure next_frame_callback_;
+
+  void RecordFramePresentation(uint64_t frame_number, int64_t view_id);
+
+  struct FramePresentationTiming {
+    uint64_t frame_number = 0;
+    int64_t qpc = 0;
+  };
+  // Even generations are disabled; odd generations are enabled. Rechecking
+  // the generation under the lock rejects an observer spanning disable/enable.
+  std::atomic<uint64_t> frame_presentation_generation_{0};
+  std::mutex frame_presentation_mutex_;
+  std::array<FramePresentationTiming, 512> frame_presentation_timings_{};
 
   // Handler for top level window messages.
   std::unique_ptr<WindowsLifecycleManager> lifecycle_manager_;

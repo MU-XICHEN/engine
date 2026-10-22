@@ -210,6 +210,27 @@ void FlutterDesktopEngineSetNextFrameCallback(FlutterDesktopEngineRef engine,
       [callback, user_data]() { callback(user_data); });
 }
 
+bool FlutterDesktopEnableFramePresentationTimingV1(
+    FlutterDesktopPluginRegistrarRef registrar,
+    bool enabled) {
+  if (registrar == nullptr || registrar->engine == nullptr ||
+      !registrar->engine->task_runner()->RunsTasksOnCurrentThread()) {
+    return false;
+  }
+  return registrar->engine->EnableFramePresentationTiming(enabled);
+}
+
+bool FlutterDesktopGetFramePresentationQpcV1(
+    FlutterDesktopPluginRegistrarRef registrar,
+    uint64_t frame_number,
+    int64_t* qpc) {
+  if (registrar == nullptr || registrar->engine == nullptr ||
+      !registrar->engine->task_runner()->RunsTasksOnCurrentThread()) {
+    return false;
+  }
+  return registrar->engine->GetFramePresentationQpc(frame_number, qpc);
+}
+
 HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view) {
   return ViewFromHandle(view)->GetWindowHandle();
 }

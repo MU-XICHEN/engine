@@ -2267,6 +2267,16 @@ typedef struct {
   /// being registered on the framework side. The callback is invoked from
   /// a task posted to the platform thread.
   FlutterChannelUpdateCallback channel_update_callback;
+
+  /// Optional synchronous notification after a successful SurfaceFrame submit.
+  /// Runs on the raster thread. The observer must not block, call engine APIs,
+  /// or retain user_data after the engine shuts down. Failed, retried,
+  /// discarded and external-view-embedder submissions are excluded. This is not
+  /// a display scanout notification. The frame number matches Dart
+  /// FrameTiming.frameNumber. Appended for struct_size compatibility with older
+  /// embedders.
+  void (*frame_submitted_callback)(uint64_t frame_number, int64_t view_id,
+                                  void* user_data);
 } FlutterProjectArgs;
 
 #ifndef FLUTTER_ENGINE_NO_PROTOTYPES
